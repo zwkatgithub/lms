@@ -1,0 +1,7 @@
+db.drop_all()
+db.session.commit()
+db.create_all()
+admin  = Admin('admin')
+admin.set_password('123456')
+db.session.add(admin)
+db.session.commit()

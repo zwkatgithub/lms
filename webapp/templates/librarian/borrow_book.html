@@ -1,0 +1,27 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+
+<div class='row'>
+</br></br>
+    <div class='col-lg-4'></div>
+    <div class='col-lg-4'>
+       
+        <form role='form' method='post' action='{{url_for('librarian.borrow_book')}}'>
+            {{form.hidden_tag()}}
+            {{wtf.form_field(form.ID)}}
+            {{form.copy_ids.label}}{{form.copy_ids}}
+            {{wtf.form_field(form.add)}}
+            {{wtf.form_field(form.days)}}
+            {{wtf.form_field(form.borrow)}}
+        </form>
+
+
+       
+        
+      
+    </div>
+    <div class='col-lg-4'></div>
+</div>
+
+{%endblock%}

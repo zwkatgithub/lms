@@ -1,0 +1,72 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+
+<div class='row'>
+</br></br>
+    <div class='col-lg-4'></div>
+    <div class='col-lg-4'>
+        <form role='form' method='post' action='{{url_for('librarian.return_book')}}'>
+            {{form.hidden_tag()}}
+            {{form.copy_ids.label}}{{form.copy_ids}}
+            {{wtf.form_field(form.add)}}
+            {{wtf.form_field(form.return_)}}
+        
+        <script>
+                $(function () { $('#myModal').modal({keyboard: true})});
+        </script>
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" >
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                &times;
+                            </button>
+                            <h4 class="modal-title" id="myModalLabel">
+                                Return
+                            </h4>
+                        </div>
+                       <div class='modal-body'>
+                           <table>
+                               <thead>
+                                    
+                                    <th>Picture</th>
+                                    <th>Tile</th>
+                                    <th>ISBN</th>
+                                    <th>Copy ID</th>
+    
+                                    <th>Return Date</th>
+                                    <th>Current Date</th>
+                                    <th>Fine</th>
+                                    
+                               </thead>
+                               <tbody>
+                                   {%for copy,borrow_date, return_date,fine in data%}
+                                   <tr>
+                                        <td class='col-lg-1'><img src='/static/picture/{{copy.book.picture}}')></td>
+                                        <td class='col-lg-1'>{{copy.book.title}}</td>
+                                        <td class='col-lg-1'>{{copy.book.ISBN}}</td>
+                                        <td class='col-lg-1'>{{copy.copy_id}}</tf>
+               
+                                        <td class='col-lg-3'>{{return_date}}</td>
+                                        <td class='col-lg-3'>{{current_date}}</td>
+                                        <td class='col-lg-3'>{{fine}}</td>
+                                   </tr>
+                                   {%endfor%}
+                               </tbody>
+                           </table>
+
+                       </div>
+                        <div class="modal-footer">
+                            <a class="btn btn-default" data-dismiss="modal" href='#' role='button'>Cancel
+                            </a>
+                            {{wtf.form_field(form.submit)}}
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal -->
+            </form>
+    </div>
+    <div class='col-lg-4'></div>
+</div>
+
+{%endblock%}

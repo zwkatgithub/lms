@@ -1,0 +1,12 @@
+{%extends 'base.html'%}
+{%from 'macros.html' import book_result %}
+{%block page_content%}
+<div class='row'>
+        {{book_result(books)}}
+</div>
+
+<div class='row'>
+    {{render_pagination(books,content,endpoint)}}
+</div>
+
+{%endblock%}

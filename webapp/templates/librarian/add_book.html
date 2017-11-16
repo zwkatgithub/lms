@@ -1,0 +1,34 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+<div class='row'>
+    </br></br>
+    <form role='form' method='POST' action="{{url_for('librarian.add_book')}}">
+            {{form.hidden_tag()}}
+    <div class='col-lg-4'>
+            {{wtf.form_field(form.ISBN)}}
+            {{wtf.form_field(form.submit)}}
+            <div class='row'>
+                    {%if picture%}
+                    <strong>Current Picture : </strong>
+                    <a class='thumbnail' href='#'><img src='/static/picture/{{picture}}'></a>
+                {%endif%}
+            </div>
+            <div class='row'>
+                    {{form.copies.form.locations.label}}{{form.copies.form.locations}}
+                    {{wtf.form_field(form.copies.add)}}
+            </div>
+       
+    </div>
+    <div class='col-lg-8'>
+        
+            
+            
+            {{wtf.form_field(form.book_form)}}
+            
+       
+        
+    </div>
+</form>
+</div>
+{%endblock%}

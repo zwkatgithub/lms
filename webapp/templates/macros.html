@@ -1,0 +1,203 @@
+{%macro render_pagination(pagination, content, endpoint)%}
+<nav>
+    <ul class='pagination'>
+        <li>
+            {%if pagination.has_prev%}
+                <a href='{{url_for(endpoint,content=content,page=pagination.prev().page)}}' aria-label='Previous'>
+                    <span aria-hidden='true'>&laquo;</span>
+                </a>
+            {%else%}
+                <!-- <a href='' aria-label='Previous' >
+                    <span aria-hidden='true'>&laquo;</span>
+                </a> -->
+            {%endif%}
+        </li>
+        {%for page in pagination.iter_pages()%}
+            {%if page %}
+                {%if page != pagination.page %}
+                    <li class='disable'>
+                        <a href='{{ url_for(endpoint,content=content,page=page)}}'>
+                            {{page}}
+                        </a>
+                    </li>
+                {%else%}
+                    <li class='active'><a href="">{{page}}</a></li>
+                {%endif%}
+            {%else%}
+                <li><a>...</a></li>
+            {%endif%}
+        {%endfor%}
+        <li>
+            {%if pagination.has_next%}
+            <a href='{{url_for(endpoint,content=content,page=pagination.next().page)}}' aria-label='Next'>
+                <span aria-hidden='true'>&raquo;</span>
+            </a>
+            {%else%}
+            <!-- <a href='' aria-label='Next'>
+                    <span aria-hidden='true'>&raquo;</span>
+            </a> -->
+            {%endif%}
+        </li>
+    </ul>
+</nav>     
+{%endmacro%}
+{% macro render_field(field) %}
+<div class='row'>
+     {{ field.label }}
+</div>
+<div class='row'>
+    {{ field(**kwargs)|safe }}
+</div>
+{% endmacro %}
+{%macro book_result(books)%}
+
+        <table class="table table-hover ">
+            <thead>
+                <th>Picture</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Press</th>
+                <th>Publish Date</th>
+                <th>ISBN</th>
+                <th>Price</th>
+                <th>Summary</th>
+            </thead>
+            <tbody>
+                
+                {%for book in books.items%}
+                <tr>
+                    <td class='col-lg-1'><a href='{{url_for('result.result_entity',book_id=book.book_id)}}' class='thumbnail'><img src='/static/picture/{{book.picture}}'></a></td>
+                    <td class='col-lg-1'><a href='{{url_for('result.result_entity',book_id=book.book_id)}}'>{{book.title}}</a></td>
+                    <td class='col-lg-1'><a href='{{url_for('result.result_author',content=book.author,page=1)}}'>{{book.author}}</a></td>
+                    <td class='col-lg-1'>{{book.press}}</td>
+                    <td class='col-lg-1'>{{book.publish_date}}</td>
+                    <td class='col-lg-1'>{{book.ISBN}}</td>
+                    <td class='col-lg-1'>{{book.price}}</td>
+                    <td class='col-lg-3'>
+                            <a href="#" class="tooltip-test" data-toggle="tooltip" title="{{book.summary}}">{{book.summary[:20]}}</a>
+                    </td>
+                </tr>
+                {%endfor%}
+                
+            </tbody>
+        </table>
+
+
+{%endmacro%}
+{%macro reader_info(reader)%}
+<table class='table table-hover'>
+    <thead>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Sex</th>
+        <th>Fine</th>
+        <th>Deposit</th>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{reader.ID}}</td>
+            <td>{{reader.name}}</td>
+            <td>
+                {%if reader.sex==1%}
+                male
+                {%else%}
+                    female
+                {%endif%}
+            </td>
+            <td>{{reader.fine}}</td>
+            <td>{{reader.deposit}}</td>
+        </tr>
+    </tbody>
+</table>
+{%endmacro%}
+{%macro status_to_view(status)%}
+{%if status == 1%}
+    On the shelf
+{%elif status==2%}
+    Borrowed
+{%elif status==8%}
+    Damaged
+{%elif status==16%}
+    Lost
+{%else%}
+    Dealing
+{%endif%}
+{%endmacro%}
+
+{%macro sex_to_view(sex)%}
+
+{%if sex==1%}
+    male
+{%else%}
+    female
+{%endif%}
+
+{%endmacro%}
+
+{%macro my_table(ths,ts,urls)%}
+<div class='row'>
+        <div class='col-lg-2'></div>
+        <div class='col-lg-8'>
+        <table class='table table-hover'>
+            <thead>
+                {%for t in ths%}
+                <th class='col-lg-1'>{{t}}</th>
+                {%endfor%}
+                
+            </thead>
+            <tbody>
+                {% for t in ts %}
+                    <tr>
+                        {%for tt in t%}
+                        {%if tt != 'Edit' and tt != 'Delete'%}
+                        <td class='col-lg-1'>{{tt}}</td>
+                        {%else%}
+                            {%if tt == 'Edit'%}
+                            <td class='col-lg-1'><a href='{{url_for('{{urls[0]}}')}}'>tt</a></td>
+                            {%else%}
+                            <td class='col-lg-1'><a href='{{url_for('{{urls[1]}}')}}'>tt</a></td>
+                            {%endif%}
+                        {%endif%}
+                        {%endfor%}
+                      
+                    </tr>
+    
+                {%endfor%}
+            </tbody>
+        </table>
+        </div>
+        <div class='col-lg-2'></div>
+    </div>
+{%endmacro%}
+{%macro trigger(size,id,button_name)%}
+<button class="btn btn-default btn-{{size}}" data-toggle='modal' data-target='#{{id}}'>
+        <a >{{button_name}}</a>
+</button>
+{%endmacro%}
+
+{%macro modal(fade, id,header,body,url)%}
+<div class="modal {{fade}}" id="{{id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                        {{header}}}
+                    </h4>
+                </div>
+               <div class='modal-body'>
+                   {{body}}
+
+               </div>
+                <div class="modal-footer">
+                    <a class="btn btn-default" data-dismiss="modal" href='#' role='button'>Close
+                    </a>
+                    <a class="btn btn-default"  href="{{url}}" role='button'>Submit
+                    </a>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal -->
+    </div>
+{%endmacro%}

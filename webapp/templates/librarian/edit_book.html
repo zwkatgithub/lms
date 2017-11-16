@@ -1,0 +1,15 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+<div class='row'>
+    </br></br>
+    <div class='col-lg-4'>
+            <strong>Current Picture : </strong>
+            <a class='thumbnail' href='#'><img src='/static/picture/{{picture}}'></a>
+    </div>
+    <div class='col-lg-8'>
+            {{wtf.quick_form(form)}}
+    </div>
+   
+</div>
+{%endblock%}

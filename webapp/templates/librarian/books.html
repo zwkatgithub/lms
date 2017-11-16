@@ -1,0 +1,134 @@
+{%extends 'librarian/main.html'%}
+
+
+{%block page_content%}
+
+<div class='row'>
+    <div class='col-lg-1'></div>
+    <div class='col-lg-10'>
+            <div class="row clearfix ">
+                    <form class='form-inline' method="POST">
+                        {{form.hidden_tag()}}
+                        <div class='form-group'>
+                            {{form.methods(class_="form-control")}} {{form.content(class_="form-control")}}
+                            {{form.search(class_='form-control')}}
+                            
+                        </div>
+                    </form>
+            </div>
+        </br></br>
+            <div class='row'>
+                    <table class="table table-hover ">
+                            <thead>
+                                <th>Picture</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Press</th>
+                                <th>Publish Date</th>
+                                <th>ISBN</th>
+                                <th>Price</th>
+                                <th>Summary</th>
+                        
+                                <th>Operations</th>
+                            </thead>
+                            <tbody>
+                                
+                                {%for book in books.items%}
+                                
+                                <tr>
+                                    <td class='col-lg-1'><a href='{{url_for('librarian.get_book_copies',book_id=book.book_id)}}' class='thumbnail'><img src='/static/picture/{{book.picture}}'></a></td>
+                                    <td class='col-lg-1'><a href='{{url_for('librarian.get_book_copies',book_id=book.book_id)}}'>{{book.title}}</a></td>
+                                    <td class='col-lg-1'>{{book.author}}</td>
+                                    <td class='col-lg-1'>{{book.press}}</td>
+                                    <td class='col-lg-1'>{{book.publish_date}}</td>
+                                    <td class='col-lg-1'>{{book.ISBN}}</td>
+                                    <td class='col-lg-1'>{{book.price}}</td>
+                                    <td class='col-lg-3'>
+                                            <a href="#" class="tooltip-test" data-toggle="tooltip" title="{{book.summary}}">{{book.summary[:20]}}</a>
+                                        
+                                    </td>
+                        
+                                    <td class='col-lg-2'>
+                                        <button class='btn btn-default btn-xs'>
+                                            <a href="{{url_for('librarian.edit_book',book_id=book.book_id)}}">Edit</a>
+                                        </button>
+                                        
+                                        <button class='btn btn-default btn-xs'>
+                                            <a href='{{url_for('librarian.add_copy',book_id=book.book_id)}}'>Add</a>
+                                        </button>
+                                       
+                                        <button class="btn btn-default btn-xs" data-toggle='modal' data-target='#delete{{book.book_id}}'>
+                                                <a>Delete</a>
+                                        </button>
+                                        
+                                        <div class="modal fade" id="delete{{book.book_id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                                                &times;
+                                                            </button>
+                                                            <h4 class="modal-title" id="myModalLabel">
+                                                                Confirmed to delete?
+                                                            </h4>
+                                                        </div>
+                                                       <div class='modal-body'>
+                                                           <table>
+                                                               <thead>
+                                                                    
+                                                                    <th>Title</th>
+                                                                    <th>Author</th>
+                                                                    <th>Press</th>
+                                                                    <th>Publish Date</th>
+                                                                    <th>ISBN</th>
+                                                                    <th>Price</th>
+                                                                    <th>Summary</th>
+                                                               </thead>
+                                                               <tbody>
+                                                                   <tr>
+                                                                        
+                                                                        <td class='col-lg-1'><a href='{{url_for('librarian.get_book_copies',book_id=book.book_id)}}'>{{book.title}}</a></td>
+                                                                        <td class='col-lg-1'>{{book.author}}</td>
+                                                                        <td class='col-lg-1'>{{book.press}}</td>
+                                                                        <td class='col-lg-1'>{{book.publish_date}}</td>
+                                                                        <td class='col-lg-1'>{{book.ISBN}}</td>
+                                                                        <td class='col-lg-1'>{{book.price}}</td>
+                                                                        <td class='col-lg-3'>
+                                                                                <a href="#" class="tooltip-test" data-toggle="tooltip" title="{{book.summary}}">{{book.summary[:20]}}</a>
+                                                                        </td>
+                                                                   </tr>
+                                                               </tbody>
+                                                           </table>
+
+                                                       </div>
+                                                        <div class="modal-footer">
+                                                            <a class="btn btn-default" data-dismiss="modal" href='#' role='button'>Close
+                                                            </a>
+                                                            <a class="btn btn-default"  href="{{url_for('librarian.delete_book',book_id=book.book_id)}}" role='button'>Delete
+                                                            </a>
+                                                        </div>
+                                                    </div><!-- /.modal-content -->
+                                                </div><!-- /.modal -->
+                                                
+                                            </div>
+                                        
+                                    </td>
+                                </tr>
+                                {%endfor%}
+                                
+                            </tbody>
+                        </table>
+            </div>
+           
+                    <div class='row'>
+                            {{render_pagination(books,content,endpoint)}}                            
+                        </div>
+          
+    </div>
+   
+</div>
+
+
+
+
+{%endblock%}

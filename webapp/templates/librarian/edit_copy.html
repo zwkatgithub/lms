@@ -1,0 +1,20 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+<div class='row'>
+    </br></br>
+    <div class='col-lg-2'>
+            
+    </div>
+    <div class='col-lg-8'>
+        <div class='row'>
+            <strong>Copy ID : {{copy.copy_id}}</strong>
+        </div>
+        <div class='row'>
+            {{wtf.quick_form(form)}}
+        </div>
+            
+    </div>
+   
+</div>
+{%endblock%}

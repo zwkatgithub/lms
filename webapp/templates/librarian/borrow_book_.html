@@ -1,0 +1,74 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+
+<div class='row'>
+</br></br>
+    <div class='col-lg-4'></div>
+    <div class='col-lg-4'>
+        <form role='form' method='post' action='{{url_for('librarian.borrow_book')}}'>
+            {{form.hidden_tag()}}
+            {{wtf.form_field(form.ID)}}
+            {{form.copy_ids.label}}{{form.copy_ids}}
+            {{wtf.form_field(form.add)}}
+            {{wtf.form_field(form.days)}}
+            {{wtf.form_field(form.borrow)}}
+        
+        <script>
+                $(function () { $('#myModal').modal({keyboard: true})});
+        </script>
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                &times;
+                            </button>
+                            <h4 class="modal-title" id="myModalLabel">
+                                Transaction
+                            </h4>
+                        </div>
+                       <div class='modal-body'>
+                           <table>
+                               <thead>
+                                    
+                                    <th>Reader ID</th>
+                                    <th>Tile</th>
+                                    <th>ISBN</th>
+                                    <th>Copy ID</th>
+                                    <th>Librarian ID</th>
+                                    <th>Borrow Date</th>
+                                    <th>Return Date</th>
+                                    
+                               </thead>
+                               <tbody>
+                                   {%for copy in copys%}
+                                   <tr>
+                                        <td class='col-lg-1'>{{reader.ID}}</td>
+                    
+                                        <td class='col-lg-1'>{{copy.book.title}}</td>
+                                        <td class='col-lg-1'>{{copy.book.ISBN}}</td>
+                                        <td class='col-lg-1'>{{copy.copy_id}}</td>
+                                        <td class='col-lg-1'>{{current_user.ID}}</td>
+                                        <td class='col-lg-3'>{{borrow_date}}</td>
+                                        <td class='col-lg-3'>{{return_date}}</td>
+                                   </tr>
+                                   {%endfor%}
+                               </tbody>
+                           </table>
+
+                       </div>
+                        <div class="modal-footer">
+                            <a class="btn btn-default" data-dismiss="modal" href='#' role='button'>Cancel
+                            </a>
+                            {{wtf.form_field(form.submit)}}
+                            
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal -->
+            </form>
+    </div>
+    <div class='col-lg-4'></div>
+</div>
+
+{%endblock%}

@@ -1,0 +1,25 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+<div class='row'>
+    </br></br>
+    <div class='col-lg-4'>
+           
+    </div>
+    <div class='col-lg-4'>
+        <form role='form' method='POST' action='{{url_for('librarian.add_copy',book_id=book_id)}}'>
+            {{form.hidden_tag()}}
+            {{form.locations.label}}{{form.locations}}
+            {{wtf.form_field(form.add)}}
+            {{wtf.form_field(form.submit)}}
+            <!-- {{form.submit(class_='btn btn-default ',data_toggle='modal',data_target='#submit')}} -->
+            <!-- {{wtf.quick_form(form)}} -->
+        
+      
+        </form>
+        
+            
+    </div>
+   
+</div>
+{%endblock%}

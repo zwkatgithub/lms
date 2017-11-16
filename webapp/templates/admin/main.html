@@ -1,0 +1,12 @@
+{%extends 'base.html'%}
+{%block functions%}
+<div class='navbar-collapse collapse'>
+    <ul class='nav navbar-nav'>
+
+        <li><a  href='{{url_for('admin.get_librarians')}}'>Librarians</a></li>
+        <li><a href='{{url_for('admin.register_librarian')}}'>Register Librarian</a></li>
+        
+    </ul>
+</div>
+
+{%endblock%}
