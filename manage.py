@@ -6,9 +6,12 @@ import os
 
 env = os.environ.get('WEBAPP_ENV','dev')
 app = create_app('webapp.config.%sConfig' % env.capitalize())
+
 manager = Manager(app)
 
 manager.add_command('server',Server())
+
+
 
 @manager.shell
 def make_shell_context():
@@ -16,5 +19,6 @@ def make_shell_context():
                 Reader=Reader,Librarian=Librarian,Transaction=Transaction,Admin=Admin)
 
 if __name__ == '__main__':
-    manager.run()
+    #manager.run()
+    app.run()
 

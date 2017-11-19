@@ -1,6 +1,6 @@
 {%extends 'bootstrap/base.html'%}\
 {%import 'bootstrap/wtf.html' as wtf%}
-{%from 'macros.html' import render_pagination, render_field, modal, trigger,status_to_view%}
+{%from 'macros.html' import render_pagination, render_pagination2,render_field, modal, trigger,status_to_view,sex_to_view%}
 {%block head%}
 {{super()}}
 <link rel='shortcut icon' href="{{url_for('static',filename='img/books.ico')}}" type='image/x-icon'>
@@ -10,6 +10,7 @@
 <style>tbody tr td{
         vertical-align: middle !important;
     }
+
     </style>
 
 {%endblock%}

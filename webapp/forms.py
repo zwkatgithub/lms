@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import SelectField,FormField,FieldList,FileField ,TextAreaField,StringField, SubmitField, PasswordField, DateField,BooleanField ,IntegerField, FloatField
 from wtforms.validators import DataRequired, Length, EqualTo, NumberRange
-from webapp.constant import choices, DEFAULT_LENGTH, sex_choices, login_choices, book_choices
+from webapp.constant import choices, DEFAULT_LENGTH, sex_choices, login_choices, book_choices, income_choices,edit_book_choices
 from webapp.models import Reader, Librarian, Admin
 from flask import flash
 
@@ -110,8 +110,7 @@ class EditBookForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class EditBookCopyForm(FlaskForm):
-    status = SelectField('Status',validators=[DataRequired()],coerce=int,choices=[(1,'On the shelf'),
-    (2,'Borrowed'),(8,'Damaged'),(16,'Lost'),(32,'Dealing')])
+    status = SelectField('Status',validators=[DataRequired()],coerce=int,choices=edit_book_choices)
     location = StringField('Location',validators=[DataRequired()])
     submit = SubmitField('Submit')
 
@@ -145,6 +144,12 @@ class EditLibrarianForm(FlaskForm):
     name = StringField('Name',validators=[DataRequired(),Length(max=DEFAULT_LENGTH)])
     sex = SelectField('Sex',validators=[DataRequired()],choices=sex_choices,coerce=int)
     submit = SubmitField('Submit')
+
+class EditReaderForm(FlaskForm):
+    ID = StringField('ID',validators=[DataRequired(),Length(max=DEFAULT_LENGTH)])
+    name = StringField('Name',validators=[DataRequired(),Length(max=DEFAULT_LENGTH)])
+    sex = SelectField('Sex',validators=[DataRequired()],choices=sex_choices,coerce=int)
+    submit = SubmitField('Submit') 
 
 class RegisterReaderForm(FlaskForm):
     ID = StringField('ID',validators=[DataRequired(),Length(max=DEFAULT_LENGTH)])
@@ -192,6 +197,10 @@ class ReturnBookForm(FlaskForm):
     return_ = SubmitField('Return')
     submit = SubmitField('Submit')
 
+class ReaderSearchForm(FlaskForm):
+    content = StringField('content',validators=[DataRequired(),Length(max=DEFAULT_LENGTH)])
+    search = SubmitField('Search')
+
 class DeleteBook(FlaskForm):
     ISBN = StringField("ISBN",validators=[DataRequired(),Length(max=DEFAULT_LENGTH)])
     delete = SubmitField('Delete')
@@ -203,6 +212,20 @@ class DeleteEntity(FlaskForm):
 class Search(FlaskForm):
     isbn = StringField('ISBN',validators=[DataRequired(),Length(max=13)])
     search = SubmitField('Search')
+
+class ReturnFineForm(FlaskForm):
+    fine = FloatField('Fine',validators=[DataRequired(),NumberRange(min=0)])
+    return_ = SubmitField('Return')
+
+class IncomeForm(FlaskForm):
+    way = SelectField('Way',validators=[DataRequired()],coerce=int,choices=income_choices)
+    submit = SubmitField('Submit')
+
+class SystemForm(FlaskForm):
+    fine = FloatField('Fine',validators=[DataRequired(),NumberRange(min=0.0)])
+    damage_fine = FloatField('Damage Fine',validators=[DataRequired(),NumberRange(min=0.0)])
+
+    submit = SubmitField('Submit')
 
 
 

@@ -1,0 +1,81 @@
+{%extends 'librarian/main.html'%}
+{%from 'macros.html' import status_to_view%}
+{%block page_content%}
+
+<div class='row'>
+    <div class='col-lg-1'></div>
+    <div class = 'col-lg-10'>
+        <table class="table table-hover ">
+            <thead>
+           
+                <th>Copy ID</th>
+                <th>Status</th>
+                <th>Return Date</th>
+                <th>Location</th>
+                <th>Operations</th>
+            </thead>
+            <tbody>
+               
+                <tr>
+               
+                    <td class='col-lg-2'>{{copy.copy_id}}</td>
+                    <td class='col-lg-2'>{{status_to_view(copy.status)}}</td>
+                    <td class='col-lg-2'>{{copy.return_date}}</td>
+                    <td class='col-lg-2'>{{copy.location}}</td>
+                    <td class='col-lg-2'>
+                        <button class='btn btn-default btn-sm'>
+                            <a href='{{url_for('librarian.edit_copy',copy_id=copy.copy_id)}}'>Edit</a>
+                        </button>
+                        <button class="btn btn-default btn-sm" data-toggle='modal' data-target='#delete{{copy.copy_id}}'>
+                                <a>Delete</a>
+                        </button>
+                
+                        <div class="modal fade" id="delete{{copy.copy_id}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                                                &times;
+                                            </button>
+                                            <h4 class="modal-title" id="myModalLabel">
+                                                Confirmed to delete?
+                                            </h4>
+                                        </div>
+                                       <div class='modal-body'>
+                                            <table class="table table-hover ">
+                                                    <thead>
+                                                       
+                                                        <th>Copy ID</th>
+                                                        <th>Status</th>
+                                                        <th>Return Date</th>
+                                                        <th>Location</th>
+                                                       
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                                <td class='col-lg-2'>{{copy.copy_id}}</td>
+                                                                <td class='col-lg-2'>{{status_to_view(copy.status)}}</td>
+                                                                <td class='col-lg-2'>{{copy.return_date}}</td>
+                                                                <td class='col-lg-2'>{{copy.location}}</td>
+                                                        </tr>
+                                                    </tbody>
+                                            </table>
+                                       </div>
+                                        <div class="modal-footer">
+                                            <a class="btn btn-default" data-dismiss="modal" href='#' role='button'>Close
+                                            </a>
+                                            <a class="btn btn-default" href="{{url_for('librarian.delete_copy',copy_id=copy.copy_id)}}" role='button'>Delete
+                                            </a>
+                                        </div>
+                                    </div><!-- /.modal-content -->
+                                </div><!-- /.modal -->
+                            </div>
+                    </td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{%endblock%}

@@ -2,6 +2,8 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 import urllib.request as req
 import json
+from datetime import datetime
+
 
 bcrypt = Bcrypt()
 
@@ -64,7 +66,12 @@ class GetBook:
         if self.book is None or key not in self.book:
             return None
         return self.book[key]
-
+def get_week(date):
+    return int(datetime.isocalendar(date)[1])
+def get_month(date):
+    return int(date.month)
+def get_year(date):
+    return int(date.year)
 def download_picture(url,path):
     if len(url) == 0:
         return False
@@ -74,14 +81,17 @@ def download_picture(url,path):
             return False
         tail = url.split('.')[-1]
     except Exception:
+        print('exp')
         with open(path+'default.png','rb') as file:
             data = file.read()
             tail='png'
+    path += str(datetime.now().time()).split('.')[-1]+ '.'+tail
     
-    path += 'tmp.'+tail
     with open(path,'wb') as file:
         file.write(data)
+
     return path
 if __name__ == '__main__':
     pic = GetBook()['image_path']
-    download_picture(pic,r'E:\Program\Library_Manage_System\webapp\static\picture\2')
+    download_picture(pic,r'E:\\Program\\Library_Manage_System\\webapp\\static\\picture\\2')
+

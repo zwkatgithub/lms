@@ -237,9 +237,43 @@ class Transaction(db.Model):
 class FineChange(db.Model):
     __tablename__='finechange'
 
-    finechange_id = db.Column(Integer(),primary_key=True)
+    finechange_id = db.Column(db.Integer(),primary_key=True)
     start_date = 	db.Column(db.Date())
     fine = db.Column(db.Float())
 
+    def __init__(self,start_date, fine):
+        self.start_date = start_date
+        self.fine  = fine
+
     def __repr__(self):
         return '<Start Date %r : Fine %r>' %(self.start_date, self.fine)
+
+class Income(db.Model):
+    __tablename__ = 'income'
+    income_id = db.Column(db.Integer(),primary_key=True)
+    date = db.Column(db.Date())
+    week = db.Column(db.Integer())
+    year = db.Column(db.Integer())
+    month = db.Column(db.Integer())
+    income = db.Column(db.Float())
+
+    def __init__(self,date,year,month,week,income):
+        self.date = date
+        self.income = income
+
+    def __repr__(self):
+        return '<Date : %r - Income : %r>' %(self.date, self.income)
+
+class System(db.Model):
+    __tablename__='system'
+    system_id = db.Column(db.Integer(),primary_key=True)
+    fine = db.Column(db.Float())
+    damage_fine = db.Column(db.Float())
+   
+    def __init__(self,fine,damage_fine):
+        self.fine = fine
+        self.damage_fine = damage_fine
+
+    def __repr__(self):
+       return '<Fine : %r Damage Fine : %r>' %(self.fine, self.damage_fine)
+

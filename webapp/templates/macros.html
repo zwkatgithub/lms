@@ -119,17 +119,21 @@
     Damaged
 {%elif status==16%}
     Lost
+{%elif status==3%}
+    Time Out
+{%elif status==4%}
+    Time In
 {%else%}
-    Dealing
+    Arranging
 {%endif%}
 {%endmacro%}
 
 {%macro sex_to_view(sex)%}
 
 {%if sex==1%}
-    male
+    Male
 {%else%}
-    female
+    Female
 {%endif%}
 
 {%endmacro%}
@@ -200,4 +204,50 @@
             </div><!-- /.modal-content -->
         </div><!-- /.modal -->
     </div>
+{%endmacro%}
+
+
+
+{%macro render_pagination2(pagination,reader_id, endpoint)%}
+<nav>
+    <ul class='pagination'>
+        <li>
+            {%if pagination.has_prev%}
+                <a href='{{url_for(endpoint,reader_id=reader_id,page=pagination.prev().page)}}' aria-label='Previous'>
+                    <span aria-hidden='true'>&laquo;</span>
+                </a>
+            {%else%}
+                <!-- <a href='' aria-label='Previous' >
+                    <span aria-hidden='true'>&laquo;</span>
+                </a> -->
+            {%endif%}
+        </li>
+        {%for page in pagination.iter_pages()%}
+            {%if page %}
+                {%if page != pagination.page %}
+                    <li class='disable'>
+                        <a href='{{ url_for(endpoint,reader_id=reader_id,page=page)}}'>
+                            {{page}}
+                        </a>
+                    </li>
+                {%else%}
+                    <li class='active'><a href="">{{page}}</a></li>
+                {%endif%}
+            {%else%}
+                <li><a>...</a></li>
+            {%endif%}
+        {%endfor%}
+        <li>
+            {%if pagination.has_next%}
+            <a href='{{url_for(endpoint,reader_id=reader_id,page=pagination.next().page)}}' aria-label='Next'>
+                <span aria-hidden='true'>&raquo;</span>
+            </a>
+            {%else%}
+            <!-- <a href='' aria-label='Next'>
+                    <span aria-hidden='true'>&raquo;</span>
+            </a> -->
+            {%endif%}
+        </li>
+    </ul>
+</nav>     
 {%endmacro%}

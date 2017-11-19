@@ -3,69 +3,53 @@
 {%block functions%}
 
 <div class='navbar-collapse collapse'>
-        <ul class='nav navbar-nav'>
-    
-            <li class='active'><a href='{{url_for('Reader.main')}}'>Personal Information</a></li>
-            
-            
-        </ul>
+        
 </div>
 
 {%endblock%}
 {%block page_content%}
 
-
-    <div class='row'>
-            <form class="form-horizontal" role="form">
-                <div class="form-group">
-                    <label class="col-lg-4 control-label">Reader Number</label>
-                    <div class="col-lg-8">
-                        <p class="form-control-static">{{current_user.Reader_number}}</p>
-                    </div>
-                </div>
-                <div class="form-group">
-                        <label class="col-lg-4 control-label">Name</label>
-                        <div class="col-lg-8">
-                            <p class="form-control-static">{{current_user.name}}</p>
-                        </div>
-
-                </div>
-                <div class="form-group">
-                        <label class="col-lg-4 control-label">Sex</label>
-                        <div class="col-lg-8">
-                            <p class="form-control-static">{{sex_to_view(current_user.sex)}}</p>
-                        </div>
-                    </div>
-            </form>
-    </div>
-</div>
-
 <div class='row'>
-    <div class='col-lg-2'></div>
-    <div class='col-lg-8'>
-    <table class='table table-hover'>
-        <thead>
-            <th class='col-lg-1'>No</th>
-            <th class='col-lg-1'>Title</th>
-            <th class='col-lg-1'>Entity ID</th>
-            <th class='col-lg-1'>Borrow Date</th>
-            <th class='col-lg-1'>Return Date</th>
-        </thead>
-        <tbody>
-            {% for t in ts %}
-                <tr>
-                    <td class='col-lg-1'>{{loop.index}}</td>
-                    <td class='col-lg-1'>{{t[1].book.title}}</td>
-                    <td class='col-lg-1'>{{t[0].entity_id}}</td>
-                    <td class='col-lg-1'>{{t[0].borrow_date}}</td>
-                    <td class='col-lg-1'>{{t[0].return_date}}</td>
-                </tr>
+    <div class='col-lg-1'>
 
-            {%endfor%}
-        </tbody>
-    </table>
     </div>
-    <div class='col-lg-2'></div>
+    <div class='col-lg-10'>
+        <table class="table table-hover ">
+                <thead>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Sex</th>
+                    <th>Fine</th>
+                    <th>Deposite</th>
+                    <th>Records</th>
+                    <th>Borrowing Books</th>
+            
+                    
+                </thead>
+                <tbody>
+                    
+                    
+                    
+                    
+                    <tr>
+
+                        <td class='col-lg-1'>{{reader.ID}}</td>
+                        <td class='col-lg-1'>{{reader.name}}</td>
+                        <td class='col-lg-1'>{{sex_to_view(reader.sex)}}</td>
+                        <td class='col-lg-1'>{{reader.fine}}</td>
+                        <td class='col-lg-1'>{{reader.deposit}}</td>
+                        <td class='col-lg-1'><a href='{{url_for('reader.get_records',reader_id = reader.reader_id,page=1)}}' >Click</a></td>
+                        <td class='col-lg-1'><a href='{{url_for('reader.borrowing_books',reader_id = reader.reader_id)}}' >Click</a></td>
+                        
+                        
+            
+                       
+                    </tr>
+                   
+                    
+                </tbody>
+            </table>
+</div>
 </div>
 
 {%endblock%}

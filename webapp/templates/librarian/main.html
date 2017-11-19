@@ -5,13 +5,13 @@
     <ul class='nav navbar-nav'>
 
         <li><a  href='{{url_for('librarian.get_books',content='_',page=1)}}'>Books</a></li>
+        <li><a href='{{url_for('librarian.get_readers',content='_',page=1)}}'>Readers</a></li>
         <li><a href='{{url_for('librarian.add_book')}}'>Add Book</a></li>
-     
         <li><a href='{{url_for('librarian.register_reader')}}'>Register Reader</a></li>
         <li><a href='{{url_for('librarian.borrow_book')}}'>Borrow Book</a></li>
         <li><a href='{{url_for('librarian.return_book')}}'>Return Book</a></li>
-        <li><a href='{{url_for('librarian.return_fine')}}'>Fine</a></li>
-        <li><a href='{{url_for('librarian.system_setting')}}'>System Setting</a></li>
+        <li><a href='{{url_for('librarian.income')}}'>Income</a></li>
+        <li><a href='{{url_for('librarian.system_setting')}}'>System</a></li>
     </ul>
 </div>
 

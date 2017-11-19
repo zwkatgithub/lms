@@ -1,14 +1,16 @@
 from flask import Blueprint, render_template, url_for, redirect, current_app, flash,session,g
-from webapp.models import Reader, Librarian, Book, Book_Copy, Transaction, db
-from webapp.forms import RegisterReaderForm, AddBookForm, AddCopyForm,EditBookForm,BookForm, EditBookCopyForm,BookSearchForm,BorrowBookForm, ReturnBookForm, DeleteBook, DeleteEntity, Search
+from webapp.models import System,Reader, Librarian, Book, Book_Copy, Transaction, db, FineChange, Income
+from webapp.forms import SystemForm,IncomeForm,ReturnFineForm, EditReaderForm, ReaderSearchForm,RegisterReaderForm, AddBookForm, AddCopyForm,EditBookForm,BookForm, EditBookCopyForm,BookSearchForm,BorrowBookForm, ReturnBookForm, DeleteBook, DeleteEntity, Search
 from flask_login import current_user
 
 from webapp.constant import  TIME_OUT, TIME_IN,PAGINATION, BORROWED, DAMAGED, ON_THE_SHELF, LOST, DEALING
-from webapp.extends import GetBook, download_picture
+from webapp.extends import GetBook, download_picture, get_month, get_week, get_year
 from webapp.permission import librarian_permission
 import os
 from datetime import timedelta, datetime
 import re
+
+from sqlalchemy import func
 
 librarian_blueprint = Blueprint('librarian',__name__,
     static_folder=os.path.join(os.path.pardir,'static'),
@@ -25,6 +27,7 @@ def main():
 @librarian_permission
 def get_books(content='_',page=1):
     books = Book.query.paginate(page,PAGINATION)
+    
     form = BookSearchForm()
     if form.validate_on_submit():
         if form.methods.data == 1:
@@ -33,6 +36,8 @@ def get_books(content='_',page=1):
             return redirect(url_for('librarian.get_books_title',content=form.content.data,page=1))
         elif form.methods.data == 3:
             return redirect(url_for('librarian.get_books_author',content=form.content.data,page=1))
+        elif form.methods.data==4:
+            return redirect(url_for('librarian.get_book_copy',copy_id=int(form.content.data)))
         else:
             flash('Error')
             books = None
@@ -43,6 +48,10 @@ def get_books(content='_',page=1):
 def get_books_ISBN(content,page):
     form = BookSearchForm()
     books = Book.query.filter_by(ISBN = content).paginate(page,PAGINATION)
+    if len(books.items) == 0:
+        flash("No Results")
+        return render_template('books.html',form=form,books=books,content=content,endpoint='librarian.get_books_ISBN',flag=True)
+        
     if form.validate_on_submit():
         if form.methods.data == 1:
             return redirect(url_for('librarian.get_books_ISBN',content=form.content.data,page=1))
@@ -54,12 +63,14 @@ def get_books_ISBN(content,page):
             flash('Error')
             books = None
         
-    return render_template('books.html',form=form,books=books,content=content,endpoint='librarian.get_books_ISBN')
+    return render_template('books.html',form=form,books=books,content=content,endpoint='librarian.get_books_ISBN',flag=True)
 @librarian_blueprint.route('/books/title/<string:content>/<int:page>',methods=['POST','GET'])
 @librarian_permission
 def get_books_title(content,page):
     form  = BookSearchForm()
     books = Book.query.filter(Book.title.like('%'+content+'%')).paginate(page,PAGINATION)
+    if len(books.items) == 0:
+        flash("No Results")
     if form.validate_on_submit():
         if form.methods.data == 1:
             return redirect(url_for('librarian.get_books_ISBN',content=form.content.data,page=1))
@@ -76,6 +87,9 @@ def get_books_title(content,page):
 def get_books_author(content,page):
     form  = BookSearchForm()
     books = Book.query.filter(Book.author.like('%'+content+'%')).paginate(page,PAGINATION)
+    if len(books.items) == 0:
+        flash("No Results")
+        return render_template('books.html',form=form,books=books,content=content,endpoint='librarian.get_books_ISBN',flag=True)
     if form.validate_on_submit():
         if form.methods.data == 1:
             #ISBN
@@ -100,7 +114,16 @@ def get_book_copies(book_id):
         flash("Can't find this book")
         return redirect(url_for('librarian.get_books',content='_',page=1))
     book_copies = book.copies.all()
-    return  render_template('book_copies.html',book_copies = book_copies)
+    return  render_template('book_copies.html',book_=book,book_copies = book_copies)
+
+@librarian_blueprint.route('/book_copy/<int:copy_id>')
+@librarian_permission
+def get_book_copy(copy_id):
+    copy = Book_Copy.query.get(copy_id)
+    if not copy:
+        flash("Can't find this copy")
+        return redirect(url_for('librarian.get_books',content='_',page=1))
+    return render_template('book_copy.html',copy = copy)
 
 @librarian_blueprint.route('/edit_book/<int:book_id>',methods=['GET','POST'])
 @librarian_permission
@@ -135,6 +158,21 @@ def edit_book(book_id):
 
     return render_template('edit_book.html',form=form,picture=book.picture)
 
+@librarian_blueprint.route('/damage_lost/<int:reader_id>/<float:fine>',methods=['GET','POST'])
+@librarian_permission
+def damage(reader_id,fine):
+    reader = Reader.query.get(reader_id)
+    if not reader:
+        flash("Can't find this reader")
+        return redirect(url_for('librarian.get_books',content='_',page=1))
+
+    reader.fine += fine
+    db.session.add(reader)
+    db.session.commit()
+    flash('Successful')
+    return redirect(url_for('librarian.get_books',content='_',page=1))
+
+
 @librarian_blueprint.route('/edit_copy/<int:copy_id>',methods=['GET','POST'])
 @librarian_permission
 def edit_copy(copy_id):
@@ -144,6 +182,30 @@ def edit_copy(copy_id):
         flash("Can't find this copy")
         return redirect(url_for('librarian.get_books',content='_',page=1))
     if form.validate_on_submit():
+        if copy.status == BORROWED and form.status.data ==DAMAGED:
+            tran = Transaction.query.filter_by(copy_id=copy.copy_id,status=TIME_IN).first()
+            if not tran:
+                flash('Error1')
+                return redirect(url_for('librarian.edit_copy',copy_id=copy.copy_id))
+            reader = Reader.query.get(tran.reader_id)
+            if not reader:
+                flash('Error2')
+                return redirect(url_for('librarian.edit_copy',copy_id=copy.copy_id))
+            damage_fine = System.query.get(1).damage_fine
+            return render_template('damage.html',form=form,copy=copy,reader=reader,fine=damage_fine,header='Damage')
+            
+        if copy.status == BORROWED and form.status.data ==LOST:
+            tran = Transaction.query.filter_by(copy_id=copy.copy_id,status=TIME_IN).first()
+            if not tran:
+                flash('Error1')
+                return redirect(url_for('librarian.edit_copy',copy_id=copy.copy_id))
+            reader = Reader.query.get(tran.reader_id)
+            if not reader:
+                flash('Error2')
+                return redirect(url_for('librarian.edit_copy',copy_id=copy.copy_id))
+            lost_fine = copy.book.price
+            return render_template('damage.html',form=form,copy=copy,reader=reader,fine=lost_fine,header='Lost')
+
         copy.status = form.status.data
         copy.location = form.location.data
 
@@ -266,10 +328,11 @@ def add_book():
         try:
             path = download_picture(book['image_path'],os.path.join(current_app.root_path+'/static/picture/'))
         except Exception:
+            print('de')
             path = 'default.png'
         if not path:
             flash('Download picture failed')
-        form.book_form.form.file.filename = 'tmp' +'.'+ path.split('.')[-1]
+        form.book_form.form.file.filename = os.path.basename(path)
         pic = form.book_form.form.file.filename
         return render_template('add_book.html',form=form,picture=form.book_form.form.file.filename)
     if form.copies.form.add.data:
@@ -288,10 +351,10 @@ def add_book():
         db.session.add(book)
         db.session.commit()
         picture = str(book.book_id)+'.'+form.book_form.form.file.filename.split('.')[-1]
-        if form.book_form.form.file.filename.find('tmp') == -1:
+        if form.book_form.form.file.filename.find(pic.split('.')[0]) == -1:
             form.book_form.form.file.save(os.path.join(current_app.root_path+'/static/picture',picture))
         else:
-            os.rename(os.path.join(current_app.root_path+'/static/picture','tmp.'+book.picture.split('.')[-1]),
+            os.rename(os.path.join(current_app.root_path+'/static/picture',pic.split('.')[0]+'.'+book.picture.split('.')[-1]),
             os.path.join(current_app.root_path+'/static/picture',picture))
         book.picture = picture
         
@@ -346,9 +409,10 @@ def check_borrowed_books(reader):
     return True
 
 def check_same_book(reader,copy):
-    transactions = reader.transactions.all()
+    transactions = Transaction.query.filter_by(reader_id=reader.reader_id, status=TIME_IN).all()
     for tran in transactions:
-        if tran.status == TIME_IN and copy.copy_id == tran.copy_id:
+        this_copy = Book_Copy.query.get(tran.copy_id)
+        if  copy.book.ISBN == this_copy.book.ISBN:
             return False
 
     return True
@@ -398,11 +462,11 @@ def borrow_book():
             if not copy[1]:
                 flash("Can't find this book copy : "+str(copy[0]))
                 return redirect(url_for('librarian.borrow_book'))
-            if copy[1].status == BORROWED:
-                flash("This copy(%r) can't be borrowed" % str(copy.copy_id))
+            if copy[1].status != ON_THE_SHELF :
+                flash("This copy(%r) can't be borrowed" % str(copy[1].copy_id))
                 return redirect(url_for('librarian.borrow_book'))
             if not check_same_book(reader,copy[1]):
-                flash("This reader has borrowed a same book : %r" % copy.book.title)
+                flash("This reader has borrowed a same book : %r" % copy[1].book.title)
                 return redirect(url_for('librarian.borrow_book'))
         if not check_fine(reader):
             flash("This reader has fine.")
@@ -444,7 +508,36 @@ def borrow_book():
 
 
 def calc_fine(copy,reader):
-    return 0.2
+    return_date = copy.return_date
+    print(copy.location)
+    current_date = datetime.date(datetime.now())
+    if return_date >= current_date:
+        return 0.0
+    #time out
+    res = 0.0
+    fines = FineChange.query.order_by(FineChange.start_date).all()
+    start = None
+    for index, fine in enumerate(fines):
+        if fine.start_date <= return_date:
+            start = index
+            print(start)
+    
+    if start is not None:
+        while start+1 < len(fines) and current_date > fines[start+1].start_date:
+            res += (fines[start+1].start_date - return_date).days * fines[start].fine
+            print(res)
+            return_date = fines[start+1].start_date
+            start +=1
+        res += (current_date - return_date).days * fines[start].fine
+          
+            
+    return res
+        
+
+
+
+
+
 res = []
 @librarian_blueprint.route('/return_book',methods=['GET','POST'])
 @librarian_permission
@@ -457,6 +550,10 @@ def return_book():
 
     if form.return_.data:
         copy_ids = [c for c in form.copy_ids.data if c is not None]
+        if len(copy_ids) == 0:
+            
+            flash('Content is null')
+            return render_template('return_book.html',form=form)
         copys = [Book_Copy.query.get(c) for c in copy_ids]
         res.clear()
         borrow_dates = []
@@ -483,254 +580,217 @@ def return_book():
         #picture copy borrow_date return_date current_date fine 
         return render_template('return_book_.html',form=form,data=zip(res,borrow_dates,return_dates,fines),current_date=datetime.date(datetime.now()))
     if form.submit.data:
-            
+        
         for copy in res:
             transaction = Transaction.query.filter_by(copy_id = copy.copy_id, status = TIME_IN).first()
             reader = Reader.query.get(transaction.reader_id)
+            reader.fine += calc_fine(copy,reader)
             copy.status = DEALING
             copy.return_date = None
             transaction.status = TIME_OUT
-            reader.fine = calc_fine(copy,reader)
+            transaction.truely_return_date = datetime.date(datetime.now())
+            
             db.session.add_all([copy,reader,transaction])
             db.session.commit()
             res.clear()
+            flash('Successful')
 
         return redirect(url_for('librarian.return_book'))
     return render_template('return_book.html',form=form)
         
 
     
+@librarian_blueprint.route('/readers/<string:content>/<int:page>',methods=['GET','POST'])
+@librarian_permission   
+def get_readers(content='_',page=1):
+    form  = ReaderSearchForm()
+    if form.validate_on_submit():
+        reader = Reader.query.filter_by(ID = form.content.data).paginate(page,PAGINATION)
+        if not reader:
+            flash("Can't find this reader")
+            return redirect(url_for('librarian.get_readers',content='_',page=1))
         
+        return render_template('readers.html',form=form,readers=reader,content=content,endpoint='librarian.get_readers',flag=True)
+    readers = Reader.query.paginate(page,PAGINATION)
+        
+    return render_template('readers.html',form=form,readers=readers,content=content,endpoint='librarian.get_readers')
 
+@librarian_blueprint.route('/records/<int:reader_id>/<int:page>',methods=['GET','POST'])
+@librarian_permission
+def get_records(reader_id,page=1):
+    reader = Reader.query.get(reader_id)
+    if not reader:
+        flash("Can't find this reader")
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    transactions = reader.transactions.paginate(page,PAGINATION)
+    res = list()
+    for tran in transactions.items:
+        copy = Book_Copy.query.get(tran.copy_id)
+        res.append(dict({'Reader_ID':reader.ID,'Title': copy.book.title,'ISBN':copy.book.ISBN,
+        'Copy_ID':copy.copy_id,'Borrow_Date':tran.borrow_date, 'Return_Date':tran.return_date,'Truely_Return_Date':tran.truely_return_date,
+        'Status':tran.status}))
+    return render_template('records.html',transactions = transactions,res=res,reader_id=reader_id,endpoint='librarian.get_records')
+
+@librarian_blueprint.route('/borrowing_books/<int:reader_id>',methods=['GET','POST'])
+@librarian_permission
+def borrowing_books(reader_id):
+    reader = Reader.query.get(reader_id)
+    if not reader:
+        flash("Can't find this reader")
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    trans = Transaction.query.filter_by(reader_id = reader_id, status=TIME_IN).all()
+    if len(trans) > 2:
+        print(trans)
+        flash('Error1')
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    copies = [Book_Copy.query.get(tran.copy_id) for tran in trans]
+    for copy in copies:
+        if copy is None:
+            flash('Error2')
+            return redirect(url_for('librarian.get_readers',content='_',page=1))
+    return render_template('borrowing_books.html',copies = copies)
+
+
+@librarian_blueprint.route('/edit_reader/<int:reader_id>',methods=['GET','POST'])
+@librarian_permission
+def edit_reader(reader_id):
+    
+    form = EditReaderForm()
+    reader = Reader.query.get(reader_id)
+    if not reader:
+        flash("Can't find this reader")
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    if form.validate_on_submit():
+        reader.ID = form.ID.data
+        reader.name = form.name.data
+        reader.sex = form.sex.data
+        db.session.add(reader)
+        db.session.commit()
+        flash('Successful')
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    form.ID.data = reader.ID
+    form.name.data = reader.name
+    form.sex.data = reader.sex
+    return render_template('edit_reader.html',form=form)
+
+@librarian_blueprint.route('/cancel_reader/<int:reader_id>',methods=['GET','POST'])
+@librarian_permission
+def cancel_reader(reader_id):
+    reader = Reader.query.get(reader_id)
+    if not reader:
+        flash("Can't find this reader")
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    trans = Transaction.query.filter_by(reader_id = reader.reader_id, status=TIME_IN).all()
+    if len(trans) != 0:
+        flash("This reader has borrowed books")
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    if reader.fine > 0:
+        flash("This reader has fine")
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+
+    db.session.delete(reader)
+    db.session.commit()
 
 
 @librarian_blueprint.route('/system_setting',methods=['GET','POST'])
 @librarian_permission
 def system_setting():
-    pass
-@librarian_blueprint.route('/return_fine',methods=['GET','POST'])
+    form = SystemForm()
+    system = System.query.get(1)
+    if not system:
+        system = System(1.0,20.0)
+        db.session.add(system)
+        db.session.commit()
+    if form.validate_on_submit():
+        system.fine = form.fine.data
+        system.damage_fine = form.damage_fine.data
+        db.session.add(system)
+        db.session.commit()
+        flash('Successful')
+        return redirect(url_for('librarian.system_setting'))
+    form.fine.data = system.fine
+    form.damage_fine.data = system.damage_fine
+
+    return render_template('system.html',form=form)
+        
+@librarian_blueprint.route('/income',methods=['GET','POST'])
 @librarian_permission
-def return_fine():
-    pass
+def income():
+    form = IncomeForm()
+    x = []
+    y = []
+    if form.validate_on_submit():
+        if form.way.data == 1:
+            #year
+            data = db.session.query(Income.year,func.sum(Income.income)).group_by(Income.year).all()
+            x = [str(d[0]) for d in data]
+            y = [d[1] for d in data]
+            return render_template('income.html',form=form,data=zip(x,y))
 
+        elif form.way.data ==2:
+            #month
+            res = dict()
+            data = db.session.query(Income.year, Income.month, func.sum(Income.income)).group_by(Income.year,Income.month).all()
+            # for d in data:
+            #     if res.get(d[0],-1) == -1:
+            #         res[d[0]] = [(d[1],d[2])]
+            #     else:
+            #         res[d[0]].append((d[1],d[2]))
+            # labels = [str(i+1) for i in range(12)]   
+            # datesets = []
 
-# @librarian_blueprint.route('/borrow',methods=['GET','POST'])
-# @librarian_permission
-# def borrow_book():
-#     form = BorrowBook()
-#     if form.validate_on_submit():
-#         reader = Reader.query.filter_by(ID=form.ID.data).first()
-#         if not reader:
-#             flash("Can't find this reader")
-#             return redirect(url_for('librarian.borrow_book'))
-#         copy =  Book_Copy.query.get(form.copy_id.data)
-#         if not copy:
-#             flash("Can't find this copy")
-#             return redirect(url_for('librarian.borrow_book'))
-#         trans = reader.transactions.all()
-#         for t in trans:
-#             if t.status == TIME_IN:
-#                 tb = Book_Copy.query.get(t.copy_id)
-#                 if tb.book.ISBN == copy.book.ISBN:
-#                     flash('You have borrowd this book')
-#                     return redirect(url_for('librarian.borrow_book'))
-#         borrow_date = datetime.date(datetime.now())
-#         return_date = datetime.date(datetime.now()) + timedelta(days=form.days.data)
-#         copy.status = OUT
-#         copy.return_date = return_date
-
-#         transaction = Transaction(reader.reader_id,current_user.librarian_id,copy.copy_id,TIME_IN,
-#             borrow_date,return_date)
-
-#         db.session.add(copy)
-#         db.session.add(transaction)
-#         db.session.commit()
-#         flash('Successful')
-#         return redirect(url_for('librarian.borrow_book'))
-#     return render_template('borrow.html',form=form)
-
-# def check_none(obj,cont):
-#     if not obj:
-#         flash(cont)
-#         return False
-#     return True
-        
-# @librarian_blueprint.route('/return',methods=['GET','POST'])
-# @librarian_permission
-# def return_book():
-#     form = ReturnBook()
-#     if form.validate_on_submit():
-#         #Reader = Reader.query.filter_by(Reader_number=form.Reader_number.data).first()
-#        # if not check_none(Reader,"Cant' find this Reader"):
-#        #     return redirect(url_for('admin.return_book'))
-#         copy = Book_Copy.query.get(form.copy_id.data)
-#         if not check_none(entity,"Cant' find this copy"):
-#             return redirect(url_for('librarian.return_book'))
-#         #check_none(Reader,"Cant' find this Reader",redirect(url_for('admin.return_book')))
-#         borrow_transaction = Transaction.query.filter_by(
-#             copy_id = form.copy_id.data,
-#             status=TIME_IN).first()
-#         if not check_none(borrow_transaction,"Can't find borrow transaction"):
-#             return redirect(url_for('librarian.return_book'))
-#         borrow_transaction.status = TIME_OUT
-#         borrow_transaction.return_date = datetime.date(datetime.now())
-#         copy.status = IN
-#         copy.return_date = None
-
-#         db.session.add_all([borrow_transaction,copy])
-#         db.session.commit()
-
-#         flash('Successful')
-#         return redirect(url_for('librarian.return_book'))
-#     return render_template('return.html',form=form)
-
-
-# @librarian_blueprint.route('/enter/book',methods=['GET','POST'])
-# @librarian_permission
-# def enter_book():
-#     form = BookForm()
-#     if form.validate_on_submit():
-#         picture = form.file.data.filename
-#         new_book = Book(form.title.data,form.author.data,
-#             form.press.data,form.publish_date.data,form.ISBN.data,
-#             form.summary.data,form.price.data,form.location.data,
-#             picture,form.reference_number.data)
-
-#         db.session.add(new_book)
-#         db.session.commit()
-
-#         picture = str(new_book.book_id) + '.'+picture.split('.')[1]
-#         new_book.picture = picture
-#         db.session.add(new_book)
-#         db.session.commit()
-
-#         form.file.data.save(os.path.join(current_app.root_path+'/static/picture',picture))
-#         for i in range(form.number.data):
-#             book = Book_Copy(new_book.book_id,status=IN,return_date=None)
-#             db.session.add(book)
-#         db.session.commit()
-#         flash('Successful')
-#         return redirect(url_for('librarian.enter_book'))
-#     return render_template('enter.html',form=form)
-
-# @librarian_blueprint.route('/enter/entity',methods=['GET','POST'])
-# @librarian_permission
-# def enter_entity():
-#     form = EntityForm()
-#     if form.validate_on_submit():
-#         book = Book.query.filter_by(ISBN= form.ISBN.data).first()
-#         if not book:
-#             flash("Can't find this book.")
-#             return redirect(url_for('librarian.enter_entity'))
-#         for i in range(1,form.number.data+1):
-#             entity = Book_Copy(book.book_id,IN,None)
-#             db.session.add(entity)
-#         db.session.commit()
-#         flash('Successful')
-#         return redirect(url_for('librarian.enter_entity'))
-#     return render_template('enter.html',form=form)
-        
-# @librarian_blueprint.route('/delete/book',methods=['GET','POST'])
-# @librarian_permission
-# def delete_book():
-#     form = DeleteBook()
-#     if form.validate_on_submit():
-#         book = Book.query.filter_by(ISBN= form.ISBN.data).first()
-#         if not check_none(book,"Can't find this book"):
-#             return redirect(url_for('librarian.delete_book'))
-#         for b in book.entities.all():
-#             db.session.delete(b)
-#         pic_path = os.path.join(current_app.root_path+'/static/picture/',book.picture)
-#         os.remove(pic_path)
-#         db.session.delete(book)
-#         db.session.commit()
-#         flash('Successful')
-#         return redirect(url_for('librarian.delete_book'))
-#     return render_template('delete.html',form=form)
-
-# @librarian_blueprint.route('/delete/entity',methods=['GET','POST'])
-# @librarian_permission
-# def delete_entity():
-#     form = DeleteEntity()
-#     if form.validate_on_submit():
-#         entity = Book_Copy.query.get(form.entity_id.data)
-#         if not check_none(entity,"Can't find this book entity"):
-#             return redirect(url_for('librarian.delete_entity'))
-#         db.session.delete(entity)
-#         db.session.commit()
-#         flash('Successful')
-#         return redirect(url_for('librarian.delete_entity'))
-#     return render_template('delete.html',form=form)
-
-# global_book = None
-# @librarian_blueprint.route('/edit_search',methods=['POST','GET'])
-# @librarian_permission
-# def edit_search():
-#     global global_book
-#     search = Search()
-#     if search.validate_on_submit():
-#         global_book = Book.query.filter_by(ISBN=search.isbn.data).first()
-#         #print(book)
-#         if global_book is None:
-#             flash("Can't find this book")
-#             return render_template('edit_search.html',search=search)
-#         #global_book = book.book_id
-#         return redirect(url_for('librarian.edit_result',id = global_book.book_id))
+            x = [str(d[0])+'-'+str(d[1]) for d in data]
+            y = [d[2] for d in data]
+            return render_template('income.html',form=form,data=zip(x,y))
+        elif form.way.data == 3:
+            #week
+            data = db.session.query(Income.year, Income.week, func.sum(Income.income)).group_by(Income.year,Income.week).all()
     
-#     return render_template('edit_search.html',search=search)
+            x = [str(d[0])+'-'+str(d[1]) for d in data]
+            y = [d[2] for d in data] 
+            return render_template('income.html',form=form,data=zip(x,y))
+        elif form.way.data == 4:
+            #day
+          
+            data = db.session.query(Income.date, Income.income).all()
+            x = [str(d[0]) for d in data]
+            y = [d[1] for d in data]
+            return render_template('income.html',form=form,data=zip(x,y))
 
-# @librarian_blueprint.route('/edit_result/<int:id>',methods=['POST','GET'])
-# @librarian_permission
-# def edit_result(id):
-#     global global_book
-#     form = EditBookForm()
-#     #book = Book.query.get(id)
-#     if global_book is None:
-#         flash("Cant't find this book")
-#         return redirect(url_for('librarian.edit_search'))
+        else:
+            pass
+    return render_template('income.html',form=form,data=zip(x,y))
 
-#     if form.validate_on_submit():
-#         print('this')
-#         #book = Book.query.get(id)
-#         if global_book is None :
-#             flash('Error')
-#             return redirect(url_for('librarian.edit_search'))
+@librarian_blueprint.route('/return_fine/<int:reader_id>',methods=['GET','POST'])
+@librarian_permission
+def return_fine(reader_id):
+    form = ReturnFineForm()
+    reader = Reader.query.get(reader_id)
+    if not reader:
+        flash("Can't fine this reader")
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+
+    if form.validate_on_submit():
         
-#         global_book.title = form.title.data
-#         global_book.author = form.author.data
-#         global_book.press = form.press.data
-#         global_book.publish_date = form.publish_date.data
-#         global_book.ISBN = form.ISBN.data
-#         global_book.price = form.price.data
-#         global_book.summary = form.summary.data
-#         global_book.location = form.location.data
-#         if form.number.data != len(Book_Copy.query.filter_by(book_id=global_book.book_id).all()):
-#             flash('The number of entity is not equal this number') 
-#             return redirect(url_for('librarian.edit_search'))
-#         global_book.reference_number = form.reference_number.data
-#         if len(form.file.data.filename) != 0:
-#             form.file.data.save(os.path.join(current_app.root_path+'/static/picture',global_book.picture))
+        
+        if form.fine.data > reader.fine:
+            flash("The return fine large than reader fine")
+            return redirect(url_for('librarian.return_fine',reader_id=reader_id))
+        reader.fine -= form.fine.data
+        income = Income.query.filter_by(date=datetime.date(datetime.now())).first()
+        if not income:
+            income = Income(date,get_year(date),get_month(date),get_week(date),0.0)
+            db.session.add(income)
+            db.session.commit()
+        income.income += form.fine.data
+        db.session.add_all([reader,income])
+        db.session.commit()
 
-#         db.session.add(global_book)
-#         db.session.commit()
-#         flash('Successful')
 
-#         return redirect(url_for('librarian.edit_search'))
+        flash('Successful')
+        return redirect(url_for('librarian.get_readers',content='_',page=1))
+    return render_template('return_fine.html',form=form,reader_id=reader_id)
 
-    
-#     form.title.data = global_book.title
-#     form.author.data = global_book.author
-#     form.press.data = global_book.press
-#     form.publish_date.data = global_book.publish_date
-#     form.ISBN.data = global_book.ISBN
-#     form.price.data = global_book.price
-#     form.summary.data = global_book.summary
-#     form.location.data = global_book.location
-#     form.number.data = len(Book_Copy.query.filter_by(book_id=global_book.book_id).all())
-#     form.reference_number.data = global_book.reference_number
-
-#     return render_template('edit_result.html',form=form,picture=global_book.picture,book_id=global_book.book_id)
-    
 
 
 

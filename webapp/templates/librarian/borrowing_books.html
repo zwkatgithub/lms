@@ -1,0 +1,43 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+
+<div class='row'>
+    <div class='col-lg-1'>
+
+    </div>
+    <div class='col-lg-10'>
+        <table class='table table-hover'>
+            <thead>
+                <th class='col-lg-1'>No</th>
+                <th class='col-lg-1'>Picture</th>
+                <th class='col-lg-1'>Title</th>
+                <th class='col-lg-1'>ISBN</th>
+                <th class='col-lg-1'>Copy ID</th>
+           
+                <th class='col-lg-2'>Return Date</th>
+            </thead>
+            <tbody>
+                {%for copy in copies%}
+                    <tr>
+                        <td class='col-lg-1'>
+                            {{loop.index}}
+                        </td>
+                        <td class='col-lg-1'><a href='#' class='thumbnail'><img src='/static/picture/{{copy.book.picture}}'></a></td>
+                        <td class='col-lg-1'>
+                            {{copy.book.title}}
+                        </td>
+                        <td class='col-lg-1'>{{copy.book.ISBN}}</td>
+                        <td class='col-lg-1'>{{copy.copy_id}}</td>
+                        <td class='col-lg-1'>{{copy.return_date}}</td>
+                    </tr>
+                {%endfor%}
+            </tbody>
+        </table>
+    </div>
+    <div class='col-lg-1'>
+
+    </div>
+</div>
+
+{%endblock%}

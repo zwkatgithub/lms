@@ -1,0 +1,35 @@
+{%extends 'librarian/main.html'%}
+
+{%block page_content%}
+</br></br>
+<div class = 'row'>
+    <div class='col-lg-1'>
+
+    </div>
+    <div class='col-lg-10'>
+        <div class='row'>
+            {{wtf.quick_form(form,form_type='inline')}}
+
+        </div>
+    </br></br>
+        <div class='row'>
+            <table class='table table-hover'>
+                <thead>
+                <th class='col-lg-6'>Time</th>
+                <th class='col-lg-6'>Income</th>
+            </thead>
+            <tbody>
+                {%for (xx,yy) in data%}
+                    <tr>
+                        <td class='col-lg-6'>{{xx}}</td>
+                        <td class='col-lg-6'>{{yy}}</td>
+                    </tr>
+                {%endfor%}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class='col-lg-1'></div>
+</div>
+
+{%endblock%}

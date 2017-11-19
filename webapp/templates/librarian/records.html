@@ -1,0 +1,47 @@
+{%extends 'librarian/main.html'%}
+{%block page_content%}
+
+<div class='row'>
+    <div class='col-lg-1'>
+
+    </div>
+    <div class='col-lg-10'>
+        <table class='table table-hover'>
+            <thead>
+                <th  class='col-lg-1'>No</th>
+                <th  class='col-lg-1'>Reader ID</th>
+                <th  class='col-lg-2'>Book Tile</th>
+                <th  class='col-lg-1'>Book ISBN</th>
+                <th  class='col-lg-1'>Copy ID</th>
+                <th  class='col-lg-2'>Borrow Date</th>
+                <th  class='col-lg-2'>Return Date</th>
+                <th  class='col-lg-2'>Actually Return Date</th>
+                <th  class='col-lg-1'>Status</th>
+            </thead>
+            <tbody>
+                {%for transaction in res%}
+                    <tr>
+                        <td class='col-lg-1'>{{loop.index}}</td>
+                        <td class='col-lg-1'>{{transaction['Reader_ID']}}</td>
+                        <td class='col-lg-2'>{{transaction['Title']}}</td>
+                        <td class='col-lg-1'>{{transaction['ISBN']}}</td>
+                        <td class='col-lg-1'>{{transaction['Copy_ID']}}</td>
+                        <td class='col-lg-2'>{{transaction['Borrow_Date']}}</td>
+                        <td class='col-lg-2'>{{transaction['Return_Date']}}</td>
+                        <td class='col-lg-2'>{{transaction['Truely_Return_Date']}}</td>
+                        <td class='col-lg-1'>{{status_to_view(transaction['Status'])}}</td>
+                    </tr>
+                {%endfor%}
+            </tbody>
+        </table>
+        <div class='row'>
+            {{render_pagination(transactions,reader_id,endpoint)}}                            
+        </div>
+    </div>
+    
+    <div class='col-lg-1'>
+
+    </div>
+</div>
+
+{%endblock%}
